@@ -1,17 +1,29 @@
 const express = require('express'); //CommonJS module
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const keys = require('./config/keys');
+
 const app = express(); //Generates an Express application object.
 //This object sets up the configuration that will listen for 
 //incoming requests. It will route these requests on to the 
 //appropriate route handlers. 
 
-app.get('/', (req, res) => {
-	res.send({ bye: 'buddy' });
-});
-//GET is a route handler (method on application object)
-//The first argument '/' specifies the route (url)
-//The second argument is a function 
-//The function takes REQUEST and RESPONSE objects
-//representing the incoming/outgoing objects
+//console.developers.google.com
+passport.use(new GoogleStrategy({
+	clientID: keys.googleClientID,
+	clientSecret: keys.googleClientSecret, 
+	callbackURL: '/auth/google/callback'//sends response here
+}, (accessToken, refreshToken, profile, done) => {
+	console.log('access token', accessToken);
+	console.log('refresh token', refreshToken);
+	console.log('profile', profile);
+})); //Creates a new instance 
+
+app.get('/auth/google', passport.authenticate('google', {
+	scope: ['profile', 'email']
+}));
+
+app.get('/auth/google/callback', passport.authenticate('google')); 
 
 //Deploy application with Heroku 
 //  Checklist: 
@@ -27,5 +39,7 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 //If there is an environment variable defined by Heroku,
 //then use that port (prod). Or, use 5000 (dev). 
+
+//Google OAuth allows secure sign-in. 
 
 app.listen(PORT);
